@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #fff0e6;
+  --color-brand-100: #ffe0cc;
+  --color-brand-500: #ff6600;
+  --color-brand-600: #e65c00;
+  --color-brand-900: #4d1f00;
+  
+  --font-sans: 'Inter', sans-serif;
+  
+  --animate-fade-in-up: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-marquee: marquee 25s linear infinite;
+
+  @keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes marquee {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-100%); }
+  }
+}
+
+/* Remove inverted filter for light theme */
+.logo-img {
+    filter: grayscale(100%) opacity(70%);
+    transition: all 0.3s;
+}
+.logo-img:hover {
+    filter: grayscale(0%) opacity(100%);
+}
+
+/* Form inputs focus state */
+input:focus, textarea:focus {
+    outline: none;
+    border-color: #ff6600;
+    box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+}
