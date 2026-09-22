@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cbe68750-d56d-4cc6-88e9-1cd3a5497752",
+    "submittedAt": "2026-09-22T12:17:11.846Z",
+    "status": "New",
+    "firstName": "Devin",
+    "lastName": "Gates",
+    "email": "dg@mail.com",
+    "linkedin": "https://linkedin.com/devingates",
+    "companyName": "DevinEleven",
+    "companyWebsite": "https://devinelevellabs.com",
+    "companyDescription": "We are a garden radar system we make radars for gardening pest attacks and things like security.",
+    "whyIdea": "We are a garden radar system we make radars for gardening pest attacks and things like security.",
+    "customerNeed": "We are a garden radar system we make radars for gardening pest attacks and things like security.",
+    "videoPitch": "https://yt.com/devinelevenlabs"
+  },
+  {
+    "id": "7cd450d5-0319-4d92-8263-7698ef2bd2aa",
+    "submittedAt": "2026-09-22T12:20:07.518Z",
+    "status": "New",
+    "firstName": "Avian",
+    "lastName": "adrian",
+    "email": "Avian@mail.com",
+    "linkedin": "https://linkedin.com/Avian",
+    "companyName": "Aviation LLC",
+    "companyWebsite": "https://avaiation.com",
+    "companyDescription": "Its an aviation manufacturers who produce plane, aircrafts and drones.",
+    "whyIdea": "Its an aviation manufacturers who produce plane, aircrafts and drones.",
+    "customerNeed": "Its an aviation manufacturers who produce plane, aircrafts and drones.",
+    "videoPitch": "https://yt.com/aviationllc"
+  }
+]
