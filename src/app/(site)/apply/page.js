@@ -93,8 +93,10 @@ export default function Apply() {
         body: JSON.stringify(Object.fromEntries(formData.entries())),
       });
 
-      if (!response.ok) throw new Error('Unable to save your application.');
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to submit your application.');
       setIsSubmitted(true);
+      window.alert(JSON.stringify(result, null, 2));
     } catch (error) {
       setSubmitError(error.message);
     } finally {
@@ -174,8 +176,8 @@ export default function Apply() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                 </div>
-                <h2 className="text-3xl font-bold mb-4 text-gray-900">Thanks for applying!</h2>
-                <p className="text-gray-600 text-lg">We will get back to you.</p>
+                <h2 className="text-3xl font-bold mb-4 text-gray-900">Demo application accepted</h2>
+                <p className="text-gray-600 text-lg">This is a demo confirmation. No application data was stored.</p>
               </div>
             ) : (
               <>
@@ -246,7 +248,7 @@ export default function Apply() {
                   <div className="pt-6">
                     {submitError && <p className="mb-4 text-sm font-medium text-red-600" role="alert">{submitError}</p>}
                     <button type="submit" disabled={isSubmitting} className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-60 disabled:hover:translate-y-0 text-white py-4 rounded-full text-lg font-bold transition-all hover:-translate-y-0.5">
-                      {isSubmitting ? 'Saving application...' : 'Submit Application'}
+                      {isSubmitting ? 'Submitting...' : 'Submit Application'}
                     </button>
                   </div>
 

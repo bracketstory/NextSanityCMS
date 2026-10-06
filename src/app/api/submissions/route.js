@@ -1,5 +1,4 @@
-import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export const runtime = 'nodejs';
@@ -31,26 +30,8 @@ export async function POST(request) {
     return Response.json({ error: 'Please complete all required fields.', missingFields }, { status: 400 });
   }
 
-  const submission = {
-    id: randomUUID(),
-    submittedAt: new Date().toISOString(),
-    status: 'New',
-    firstName: String(body.firstName).trim(),
-    lastName: String(body.lastName).trim(),
-    email: String(body.email).trim(),
-    linkedin: String(body.linkedin || '').trim(),
-    companyName: String(body.companyName).trim(),
-    companyWebsite: String(body.companyWebsite || '').trim(),
-    companyDescription: String(body.companyDescription).trim(),
-    whyIdea: String(body.whyIdea).trim(),
-    customerNeed: String(body.customerNeed).trim(),
-    videoPitch: String(body.videoPitch || '').trim(),
-  };
-
-  const submissions = await readSubmissions();
-  submissions.push(submission);
-  await mkdir(path.dirname(submissionsFile), { recursive: true });
-  await writeFile(submissionsFile, `${JSON.stringify(submissions, null, 2)}\n`, 'utf8');
-
-  return Response.json({ submission }, { status: 201 });
+  return Response.json({
+    status: 'accepted',
+    message: 'Demo accepted. No application data was stored.',
+  });
 }
