@@ -1,9 +1,59 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Reveal from '../../components/Reveal';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
 import { SiAirbnb, SiStripe, SiCoinbase, SiDoordash } from 'react-icons/si';
+import { LuArrowLeft, LuArrowRight, LuArrowUpRight, LuQuote } from 'react-icons/lu';
 import { client } from '../../lib/sanityClient';
+
+function RollingMetric({ value, prefix = '', suffix = '', delay = 0 }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.6 });
+  const prefersReducedMotion = useReducedMotion();
+  const formattedValue = value.toLocaleString('en-US');
+  const digits = formattedValue.split('');
+
+  return (
+    <div ref={ref} className="mb-2 text-4xl font-black text-gray-900 md:text-6xl">
+      <span className="inline-flex items-baseline tabular-nums" aria-hidden="true">
+        {prefix}
+        <span className="inline-flex">
+          {digits.map((character, index) => {
+            if (!/\d/.test(character)) {
+              return <span key={`${character}-${index}`}>{character}</span>;
+            }
+
+            const targetRow = 10 + Number(character);
+            const targetOffset = `-${(targetRow / 20) * 100}%`;
+
+            return (
+              <span key={`${character}-${index}`} className="inline-block h-[1em] overflow-hidden align-bottom">
+                <motion.span
+                  className="flex flex-col"
+                  initial={{ y: '0%' }}
+                  animate={isInView ? { y: targetOffset } : { y: '0%' }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 2.8,
+                    delay: prefersReducedMotion ? 0 : delay + (digits.length - index - 1) * 0.12,
+                    ease: [0.12, 0.8, 0.25, 1],
+                  }}
+                >
+                  {Array.from({ length: 20 }, (_, digit) => (
+                    <span key={digit} className="h-[1em] shrink-0 leading-none">{digit % 10}</span>
+                  ))}
+                </motion.span>
+              </span>
+            );
+          })}
+        </span>
+        {suffix && <span className="text-brand-500">{suffix}</span>}
+      </span>
+      <span className="sr-only">{prefix}{formattedValue}{suffix}</span>
+    </div>
+  );
+}
 
 const fallbackCompanies = [
   { name: 'Airbnb', iconName: 'SiAirbnb', color: 'hover:text-[#FF5A5F]' },
@@ -26,13 +76,41 @@ const iconMap = {
   SiDoordash
 };
 
+const founderStories = [
+  {
+    quote: 'The first check gave us room to stop pitching and start listening to the people who needed our product.',
+    name: 'A founder building in climate',
+    detail: 'Illustrative founder perspective',
+    number: '01',
+  },
+  {
+    quote: 'The best part was having other founders in the room who understood the messy middle, not just the milestones.',
+    name: 'A founder building in healthcare',
+    detail: 'Illustrative founder perspective',
+    number: '02',
+  },
+  {
+    quote: 'We left with sharper questions, a tighter product, and the confidence to keep going when the answers changed.',
+    name: 'A founder building in software',
+    detail: 'Illustrative founder perspective',
+    number: '03',
+  },
+];
+
 export default function Home() {
   const [companies, setCompanies] = useState(fallbackCompanies);
   const [criteria, setCriteria] = useState(fallbackCriteria);
-  const [isMounted, setIsMounted] = useState(false);
+  const [activeStory, setActiveStory] = useState(0);
+  const [storyDirection, setStoryDirection] = useState('next');
+
+  const changeStory = (direction) => {
+    setStoryDirection(direction);
+    setActiveStory((currentStory) => (
+      currentStory + (direction === 'next' ? 1 : -1) + founderStories.length
+    ) % founderStories.length);
+  };
 
   useEffect(() => {
-    setIsMounted(true);
     client.fetch(`{
       "fetchedCompanies": *[_type == "company"] | order(order asc, _createdAt asc) {name, iconName, color},
       "fetchedCriteria": *[_type == "criteria"] | order(order asc, _createdAt asc) {title, description}
@@ -41,63 +119,70 @@ export default function Home() {
         if (fetchedCompanies && fetchedCompanies.length > 0) setCompanies(fetchedCompanies);
         if (fetchedCriteria && fetchedCriteria.length > 0) setCriteria(fetchedCriteria);
       })
-      .catch(console.error); // Silently fallback on failure
+      .catch(console.error);
   }, []);
+
   return (
     <>
       {/* Hero */}
-      <section className="pt-32 pb-24 relative overflow-hidden bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 relative z-10 w-full">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-            <div className="max-w-2xl">
-              <Reveal delay={0.1} className="inline-block border border-brand-500/20 bg-brand-50 text-brand-600 px-5 py-2 rounded-full text-sm font-bold mb-6">
-                W27 Applications Open • Deadline: Sept 15
-              </Reveal>
-              <Reveal delay={0.2}>
-                <h1 className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] mb-6 text-gray-900">
-                  We fund the <br />
-                  <span className="text-brand-500">outliers.</span>
-                </h1>
-              </Reveal>
-              <Reveal delay={0.3}>
-                <p className="text-xl md:text-2xl text-gray-600 mb-10 leading-relaxed">
-                  SampleVC TestFunds LLC is a startup fund and program. Since 2005, we have invested in 4,000+ companies including Stripe, Airbnb, and DoorDash.
+      <section className="overflow-hidden bg-[#14231c] text-white">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid items-center gap-10 py-10 lg:min-h-[570px] lg:grid-cols-[0.92fr_1.08fr] lg:gap-14 lg:py-12">
+            <div className="max-w-xl">
+              <Reveal delay={0.1}>
+                <p className="mb-5 text-xs font-bold uppercase tracking-[0.2em] text-brand-100">Capital for the fearless</p>
+                <p className="mb-6 inline-flex items-center gap-2 border border-brand-100/30 px-3 py-2 text-xs font-bold uppercase tracking-wider text-brand-100">
+                  <span className="h-2 w-2 rounded-full bg-brand-500" /> W27 applications open · Deadline Sept 15
                 </p>
-              </Reveal>
-              <Reveal delay={0.4} className="flex flex-wrap gap-4">
-                <Link href="/apply" className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-4 rounded-full text-lg font-bold transition-all hover:-translate-y-0.5">
-                  Apply for Winter 2027
-                </Link>
+                <h1 className="text-6xl font-black leading-[0.94] md:text-7xl">
+                  We fund the<br />
+                  <span className="font-serif font-normal italic text-brand-500">outliers.</span>
+                </h1>
+                <p className="mt-7 max-w-lg text-lg leading-relaxed text-white/75 md:text-xl">
+                  Since 2005, we have backed 4,000+ companies, including Stripe, Airbnb, and DoorDash. Bring us the idea you can&apos;t leave alone.
+                </p>
+                <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
+                  <Link href="/apply" className="inline-flex min-h-14 items-center gap-3 bg-brand-500 px-6 font-bold text-white transition-colors hover:bg-brand-600">
+                    Apply for Winter 2027 <LuArrowUpRight aria-hidden="true" size={18} />
+                  </Link>
+                  <a href="#companies" className="inline-flex items-center gap-2 font-semibold text-white/80 transition-colors hover:text-white">
+                    Explore our founders <LuArrowUpRight aria-hidden="true" size={16} />
+                  </a>
+                </div>
               </Reveal>
             </div>
-            <Reveal delay={0.5} className="hidden lg:block">
-              <div className="bg-gray-50 border border-gray-200 p-8 rounded-3xl">
-                <h3 className="text-2xl font-bold mb-6 text-gray-900 border-b border-gray-200 pb-4">The Standard Deal</h3>
-                <ul className="space-y-6">
-                  <li className="flex items-start gap-4">
-                    <div className="w-8 h-8 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
-                    <div>
-                      <div className="font-bold text-gray-900 text-lg">$500,000 Investment</div>
-                      <div className="text-gray-600">On an MFN SAFE. No complex terms, no board seats required.</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-4">
-                    <div className="w-8 h-8 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
-                    <div>
-                      <div className="font-bold text-gray-900 text-lg">7% Equity</div>
-                      <div className="text-gray-600">Standard post-money valuation cap structure used across all deals.</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-4">
-                    <div className="w-8 h-8 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
-                    <div>
-                      <div className="font-bold text-gray-900 text-lg">12-Week Program</div>
-                      <div className="text-gray-600">Intense mentorship, weekly dinners, culminating in a global Demo Day.</div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
+
+            <Reveal delay={0.25}>
+              <figure className="relative h-64 overflow-hidden rounded-2xl sm:h-80 lg:h-[460px]">
+                <Image
+                  src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1400&q=85"
+                  alt="A team of founders working through ideas together"
+                  fill
+                  priority
+                  unoptimized
+                  sizes="(min-width: 1024px) 55vw, 100vw"
+                  className="object-cover object-center"
+                />
+                <figcaption className="absolute bottom-0 left-0 bg-[#14231c] px-4 py-3 text-xs font-semibold uppercase tracking-wider text-white">
+                  Built together, from day one
+                </figcaption>
+              </figure>
             </Reveal>
+          </div>
+
+          <div className="grid grid-cols-3 border-t border-white/20 py-6">
+            <div className="border-r border-white/20 pr-3 sm:pr-6">
+              <p className="text-2xl font-black sm:text-3xl">$500K</p>
+              <p className="mt-1 text-xs font-medium text-white/60 sm:text-sm">Initial investment</p>
+            </div>
+            <div className="border-r border-white/20 px-3 sm:px-6">
+              <p className="text-2xl font-black sm:text-3xl">7%</p>
+              <p className="mt-1 text-xs font-medium text-white/60 sm:text-sm">Standard equity</p>
+            </div>
+            <div className="pl-3 sm:pl-6">
+              <p className="text-2xl font-black sm:text-3xl">12 weeks</p>
+              <p className="mt-1 text-xs font-medium text-white/60 sm:text-sm">Founder program</p>
+            </div>
           </div>
         </div>
       </section>
@@ -107,19 +192,19 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center md:text-left">
             <Reveal delay={0}>
-              <div className="text-4xl md:text-6xl font-black text-gray-900 mb-2">4,000<span className="text-brand-500">+</span></div>
+              <RollingMetric value={4000} suffix="+" />
               <div className="text-gray-500 font-medium">Funded Startups</div>
             </Reveal>
             <Reveal delay={0.1}>
-              <div className="text-4xl md:text-6xl font-black text-gray-900 mb-2">$600<span className="text-brand-500">B</span></div>
+              <RollingMetric value={600} prefix="$" suffix="B" delay={0.1} />
               <div className="text-gray-500 font-medium">Combined Valuation</div>
             </Reveal>
             <Reveal delay={0.2}>
-              <div className="text-4xl md:text-6xl font-black text-gray-900 mb-2">150<span className="text-brand-500">+</span></div>
+              <RollingMetric value={150} suffix="+" delay={0.2} />
               <div className="text-gray-500 font-medium">Billion-Dollar Cos</div>
             </Reveal>
             <Reveal delay={0.3}>
-              <div className="text-4xl md:text-6xl font-black text-gray-900 mb-2">90<span className="text-brand-500">+</span></div>
+              <RollingMetric value={90} suffix="+" delay={0.3} />
               <div className="text-gray-500 font-medium">Acquisitions</div>
             </Reveal>
           </div>
@@ -150,6 +235,44 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Founder Stories */}
+      <section id="founder-stories" className="py-24 bg-[#18221d] text-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-[0.8fr_1.2fr] gap-12 lg:gap-20 items-center">
+          <Reveal>
+            <p className="text-brand-100 text-sm font-bold uppercase tracking-[0.18em] mb-5">After the first check</p>
+            <h2 className="text-4xl md:text-5xl font-black leading-tight mb-6">The work is yours.<br /><span className="text-brand-300">You don&apos;t do it alone.</span></h2>
+            <p className="text-gray-300 text-lg leading-relaxed max-w-md">A good early partner makes the hard weeks feel more navigable, and the next step a little clearer.</p>
+            <p className="mt-8 text-xs leading-relaxed text-gray-400">Illustrative copy for layout preview. Replace with approved quotes from funded founders before publishing.</p>
+          </Reveal>
+
+          <Reveal delay={0.1}>
+            <div className="relative min-h-[340px] border border-white/15 bg-white/[0.04] p-7 sm:p-10 md:p-12">
+              <div key={activeStory} className={`founder-story-enter-${storyDirection}`}>
+                <LuQuote aria-hidden="true" className="text-brand-300 mb-8" size={34} strokeWidth={1.5} />
+                <blockquote aria-live="polite" className="min-h-36 text-2xl md:text-3xl font-semibold leading-snug">
+                  &ldquo;{founderStories[activeStory].quote}&rdquo;
+                </blockquote>
+              </div>
+              <div className="mt-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 border-t border-white/15 pt-6">
+                <div key={`founder-story-attribution-${activeStory}`} className={`founder-story-enter-${storyDirection}`}>
+                  <p className="font-bold">{founderStories[activeStory].name}</p>
+                  <p className="mt-1 text-sm text-gray-400">{founderStories[activeStory].detail}</p>
+                </div>
+                <div className="flex items-center gap-3" aria-label="Founder story controls">
+                  <span className="mr-2 font-mono text-sm text-gray-400">{founderStories[activeStory].number} / 03</span>
+                  <button type="button" onClick={() => changeStory('previous')} className="w-11 h-11 grid place-items-center border border-white/25 hover:bg-white/10 transition-colors" aria-label="Previous founder story">
+                    <LuArrowLeft size={18} />
+                  </button>
+                  <button type="button" onClick={() => changeStory('next')} className="w-11 h-11 grid place-items-center bg-brand-500 hover:bg-brand-600 transition-colors" aria-label="Next founder story">
+                    <LuArrowRight size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* Video */}
       <section className="py-24 bg-white border-t border-gray-200">
         <div className="max-w-5xl mx-auto px-6 text-center">
@@ -159,13 +282,13 @@ export default function Home() {
           <Reveal delay={0.1}>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">Hear from the outliers.</h2>
             <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
-              See what it takes to build a category-defining company during our intense 12-week accelerator. YCombinator has done an amazing video which we follow closely, and it will undeniably help anyone who is starting a startup.
+              See what it takes to build a category-defining company during our intense 12-week accelerator. YCombinator has done an amazing video which we follow closely, and it will undeniably help anyone who&apos;s starting a startup.
             </p>
           </Reveal>
           
           <Reveal delay={0.2} className="relative aspect-video bg-gray-50 border border-gray-200 p-2 md:p-4 rounded-3xl">
             <div className="w-full h-full rounded-2xl overflow-hidden bg-black">
-              {isMounted && <iframe className="w-full h-full" id="yt-player" src={`https://www.youtube-nocookie.com/embed/zBUhQPPS9AY?enablejsapi=1&rel=0&modestbranding=1&playsinline=1&autoplay=0&origin=${window.location.origin}`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>}
+              <iframe className="w-full h-full" id="yt-player" src="https://www.youtube-nocookie.com/embed/zBUhQPPS9AY?rel=0&modestbranding=1&playsinline=1&autoplay=0" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
             </div>
           </Reveal>
         </div>
@@ -233,42 +356,27 @@ export default function Home() {
             <p className="text-xl text-gray-600 max-w-2xl">Every partner at SampleVC has built, scaled, and exited a successful technology company.</p>
           </Reveal>
 
-          <div className="grid md:grid-cols-4 gap-8">
-            <Reveal delay={0} className="group cursor-pointer">
-              <div className="aspect-square bg-gray-200 mb-4 overflow-hidden rounded-3xl grayscale group-hover:grayscale-0 transition-all duration-500">
-                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Partner" className="w-full h-full object-cover" />
-              </div>
-              <h3 className="font-bold text-lg text-gray-900">Michael Chen</h3>
-              <p className="text-brand-600 text-sm font-medium">Managing Partner</p>
-              <p className="text-xs text-gray-500 mt-2">ex-Founder of DataScale (Acq. by Google)</p>
-            </Reveal>
-            
-            <Reveal delay={0.1} className="group cursor-pointer">
-              <div className="aspect-square bg-gray-200 mb-4 overflow-hidden rounded-3xl grayscale group-hover:grayscale-0 transition-all duration-500">
-                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Partner" className="w-full h-full object-cover" />
-              </div>
-              <h3 className="font-bold text-lg text-gray-900">Sarah Jenkins</h3>
-              <p className="text-brand-600 text-sm font-medium">Group Partner</p>
-              <p className="text-xs text-gray-500 mt-2">ex-CEO of HealthSync</p>
-            </Reveal>
-
-            <Reveal delay={0.2} className="group cursor-pointer">
-              <div className="aspect-square bg-gray-200 mb-4 overflow-hidden rounded-3xl grayscale group-hover:grayscale-0 transition-all duration-500">
-                <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Partner" className="w-full h-full object-cover" />
-              </div>
-              <h3 className="font-bold text-lg text-gray-900">David Osei</h3>
-              <p className="text-brand-600 text-sm font-medium">Group Partner</p>
-              <p className="text-xs text-gray-500 mt-2">ex-CTO of FinFront</p>
-            </Reveal>
-
-            <Reveal delay={0.3} className="group cursor-pointer">
-              <div className="aspect-square bg-gray-200 mb-4 overflow-hidden rounded-3xl grayscale group-hover:grayscale-0 transition-all duration-500">
-                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Partner" className="w-full h-full object-cover" />
-              </div>
-              <h3 className="font-bold text-lg text-gray-900">Elena Rostova</h3>
-              <p className="text-brand-600 text-sm font-medium">Visiting Partner</p>
-              <p className="text-xs text-gray-500 mt-2">Founder of AI Labs</p>
-            </Reveal>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { name: 'Michael Chen', role: 'Managing Partner', background: 'Founder, DataScale · acquired by Google', image: 'photo-1560250097-0b93528c311a' },
+              { name: 'Sarah Jenkins', role: 'Group Partner', background: 'Former CEO, HealthSync', image: 'photo-1573496359142-b8d87734a5a2' },
+              { name: 'David Osei', role: 'Group Partner', background: 'Former CTO, FinFront', image: 'photo-1519085360753-af0119f7cbe7' },
+              { name: 'Elena Rostova', role: 'Visiting Partner', background: 'Founder, AI Labs', image: 'photo-1580489944761-15a19d654956' },
+            ].map((member, index) => (
+              <Reveal key={member.name} delay={index * 0.08}>
+                <article className="group h-full bg-white border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-xl hover:shadow-gray-900/5">
+                  <div className="aspect-[4/4.5] overflow-hidden bg-gray-200 relative">
+                    <img src={`https://images.unsplash.com/${member.image}?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=85`} alt={member.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <span className="absolute top-4 left-4 bg-white/90 px-3 py-1.5 text-xs font-bold text-gray-800">{member.role}</span>
+                    <span className="absolute bottom-4 right-4 w-10 h-10 bg-brand-500 text-white grid place-items-center opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" aria-hidden="true"><LuArrowUpRight size={18} /></span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-bold text-xl text-gray-900">{member.name}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-500">{member.background}</p>
+                  </div>
+                </article>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>

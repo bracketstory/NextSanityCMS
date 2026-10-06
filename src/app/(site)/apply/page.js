@@ -75,8 +75,34 @@ const iconMap = {
 
 export default function Apply() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [faqs, setFaqs] = useState(fallbackFaqs);
   const [deals, setDeals] = useState(fallbackDeals);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const formData = new FormData(event.currentTarget);
+      const response = await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(formData.entries())),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to submit your application.');
+      setIsSubmitted(true);
+      window.alert(JSON.stringify(result, null, 2));
+    } catch (error) {
+      setSubmitError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     client.fetch(`{
@@ -150,15 +176,15 @@ export default function Apply() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                 </div>
-                <h2 className="text-3xl font-bold mb-4 text-gray-900">Thanks for applying!</h2>
-                <p className="text-gray-600 text-lg">We will get back to you.</p>
+                <h2 className="text-3xl font-bold mb-4 text-gray-900">Demo application accepted</h2>
+                <p className="text-gray-600 text-lg">This is a demo confirmation. No application data was stored.</p>
               </div>
             ) : (
               <>
                 <h2 className="text-3xl font-bold mb-2 text-gray-900">Enrollment Form</h2>
                 <p className="text-gray-500 mb-8">Please fill out all required fields. We read every single application.</p>
                 
-                <form action="#" method="POST" className="space-y-8" onSubmit={(e) => { e.preventDefault(); setIsSubmitted(true); }}>
+                <form method="POST" className="space-y-8" onSubmit={handleSubmit}>
                   
                   {/* Section: Founder */}
                   <div className="space-y-4">
@@ -166,20 +192,20 @@ export default function Apply() {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">First Name *</label>
-                        <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
+                        <input name="firstName" type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Last Name *</label>
-                        <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
+                        <input name="lastName" type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address *</label>
-                      <input type="email" required className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
+                      <input name="email" type="email" required className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">LinkedIn Profile</label>
-                      <input type="url" placeholder="https://linkedin.com/in/..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
+                      <input name="linkedin" type="url" placeholder="https://linkedin.com/in/..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
                     </div>
                   </div>
 
@@ -188,16 +214,16 @@ export default function Apply() {
                     <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">2. Startup Details</h3>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">Company Name *</label>
-                      <input type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
+                      <input name="companyName" type="text" required className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">Company Website (if any)</label>
-                      <input type="url" placeholder="https://" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
+                      <input name="companyWebsite" type="url" placeholder="https://" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">What is your company going to make? *</label>
                       <p className="text-xs text-gray-500 mb-2">Describe what you do in 50 words or less.</p>
-                      <textarea required rows="3" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors"></textarea>
+                      <textarea name="companyDescription" required rows="3" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors"></textarea>
                     </div>
                   </div>
 
@@ -206,22 +232,23 @@ export default function Apply() {
                     <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">3. The Pitch</h3>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">Why did you pick this idea to work on? *</label>
-                      <textarea required rows="4" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors"></textarea>
+                      <textarea name="whyIdea" required rows="4" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors"></textarea>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">How do you know people need what you're making? *</label>
-                      <textarea required rows="4" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors"></textarea>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">How do you know people need what you&apos;re making? *</label>
+                      <textarea name="customerNeed" required rows="4" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors"></textarea>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">Video Pitch URL (Optional)</label>
                       <p className="text-xs text-gray-500 mb-2">Unlisted YouTube link. Max 1 minute long.</p>
-                      <input type="url" placeholder="https://youtube.com/..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
+                      <input name="videoPitch" type="url" placeholder="https://youtube.com/..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 transition-colors" />
                     </div>
                   </div>
                   
                   <div className="pt-6">
-                    <button type="submit" className="w-full bg-brand-500 hover:bg-brand-600 text-white py-4 rounded-full text-lg font-bold transition-all hover:-translate-y-0.5">
-                      Submit Application
+                    {submitError && <p className="mb-4 text-sm font-medium text-red-600" role="alert">{submitError}</p>}
+                    <button type="submit" disabled={isSubmitting} className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-60 disabled:hover:translate-y-0 text-white py-4 rounded-full text-lg font-bold transition-all hover:-translate-y-0.5">
+                      {isSubmitting ? 'Submitting...' : 'Submit Application'}
                     </button>
                   </div>
 

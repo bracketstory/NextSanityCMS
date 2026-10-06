@@ -1,5 +1,62 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .founder-story-enter-next,
+  .founder-story-enter-previous {
+    animation: none;
+  }
+}
+
+@keyframes founder-story-enter-next {
+  from {
+    opacity: 0;
+    transform: translate3d(2rem, 0.5rem, 0) scale(0.985);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes founder-story-enter-previous {
+  from {
+    opacity: 0;
+    transform: translate3d(-2rem, 0.5rem, 0) scale(0.985);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.founder-story-enter-next,
+.founder-story-enter-previous {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.2, 0.75, 0.25, 1);
+  animation-fill-mode: both;
+}
+
+.founder-story-enter-next {
+  animation-name: founder-story-enter-next;
+}
+
+.founder-story-enter-previous {
+  animation-name: founder-story-enter-previous;
+}
+
 @theme {
   --color-brand-50: #fff0e6;
   --color-brand-100: #ffe0cc;
@@ -7,7 +64,7 @@
   --color-brand-600: #e65c00;
   --color-brand-900: #4d1f00;
   
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: var(--font-inter), sans-serif;
   
   --animate-fade-in-up: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-marquee: marquee 25s linear infinite;

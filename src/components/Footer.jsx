@@ -18,8 +18,8 @@ export default function Footer({ className = "bg-gray-900 py-12" }) {
           <a href="#" className="hover:text-white transition-colors flex items-center gap-1.5"><FaShieldAlt size={16} /> Privacy Policy</a>
         </div>
         <div className="text-gray-500 text-sm text-center md:text-right">
-          &copy; 2026 SampleVC TestFunds LLC. <br className="md:hidden" />
-          Rights reserved for designs to <a href="https://bracketstory.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline decoration-gray-700 underline-offset-2">bracketstory.com</a>
+          <p>Copyright &copy; 2026 SampleVC TestFunds LLC.</p>
+          <p>Made with style by <a href="https://bracketstory.com" target="_blank" rel="noopener noreferrer" className="text-brand-500 underline decoration-gray-700 underline-offset-2 transition-colors hover:text-white">Bracketstory</a>.</p>
         </div>
       </div>
     </footer>
